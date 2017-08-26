@@ -11,26 +11,29 @@ contract('Remittance', accounts => {
   it('should release funds to any account if both password hashes are provided', () => {
     var initialBalance;
     var instance;
-    return Remittance.deployed()
+    return Remittance.new(
+      web3.sha3(password1),
+      web3.sha3(password2),
+      {from: alice, value: amount})
     .then(_instance => {
       instance = _instance;
-      return web3.eth.getBalance(carol);
+      return web3.eth.getBalance(bob);
     })
     .then(balance => {
       initialBalance = balance;
       return instance.withdraw(
         web3.sha3(password1),
         web3.sha3(password2),
-        {from: carol});
+        {from: bob});
     })
     .then(txObj => {
-      return web3.eth.getBalance(carol);
+      return web3.eth.getBalance(bob);
     })
     .then(balance => {
       assert.isAbove(
         balance.toNumber(),
         initialBalance.toNumber(),
-        "Carol's balance wasn't credited!")
+        "Bob's balance wasn't credited!")
     });
   });
 });
