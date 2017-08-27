@@ -71,6 +71,7 @@ contract('Remittance', accounts => {
   const password2 = "world";
   const amount = web3.toWei(5, 'ether');
   var contractInstance;
+  const deadline = 10;
 
   beforeEach(() => {
     return Remittance.new(
@@ -92,7 +93,7 @@ contract('Remittance', accounts => {
     });
   });
 
-  it('should be destroyable', () => {
+  it('should be destroyable immediately without deadline or (deadline = 0)', () => {
     return contractInstance.destroy()
     .then(txObj => {
       return contractInstance.owner();
@@ -102,6 +103,28 @@ contract('Remittance', accounts => {
         web3.eth.getCode(contractInstance.address),
         '0x0',
         'The code is not equal to 0x0 (empty code)');
+    });
+  });
+
+  it('should be not be destroyable before deadline', () => {
+    var instance;
+    return Remittance.new(
+      web3.sha3(password1),
+      web3.sha3(password2),
+      deadline,
+      {from: alice, value: amount})
+    .then(_instance => {
+      instance = _instance;
+      return expectedExceptionPromise(() => {
+        return instance.destroy({from: alice})
+        .then(txObj => txObj.tx);
+      }, 1000000);
+    })
+    .then(() => {
+      assert.notEqual(
+        web3.eth.getCode(instance.address),
+        '0x0',
+        'The code was not destroyed');
     });
   });
 
