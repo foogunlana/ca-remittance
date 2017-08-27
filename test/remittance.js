@@ -66,9 +66,9 @@ contract('Remittance', accounts => {
   const alice = accounts[0];
   const carol = accounts[1];
   const bob = accounts[2];
-  const password1 = "hello";
-  const wrongPassword1 = password1 + "x";
-  const password2 = "world";
+  const password = "hello";
+  const wrongPassword1 = password + "x";
+  const recipientAddress = bob;
   const amount = web3.toWei(5, 'ether');
   const duration = 10;
   const deadlineTooLong = 100;
@@ -76,8 +76,8 @@ contract('Remittance', accounts => {
 
   beforeEach(() => {
     return Remittance.new(
-      web3.sha3(password1),
-      web3.sha3(password2),
+      web3.sha3(password),
+      web3.sha3(recipientAddress),
       0,
       {from: alice, value: amount})
     .then(instance => {
@@ -108,8 +108,8 @@ contract('Remittance', accounts => {
   it('should reject deadlines that are too long', () => {
     return expectedExceptionPromise(() => {
       return Remittance.new(
-        web3.sha3(password1),
-        web3.sha3(password2),
+        web3.sha3(password),
+        web3.sha3(recipientAddress),
         deadlineTooLong,
         {from: alice, value: amount, gas: 1000000})
       .then(txObj => txObj.tx);
@@ -119,8 +119,8 @@ contract('Remittance', accounts => {
   it('should be not be destroyable before deadline', () => {
     var instance;
     return Remittance.new(
-      web3.sha3(password1),
-      web3.sha3(password2),
+      web3.sha3(password),
+      web3.sha3(recipientAddress),
       duration,
       {from: alice, value: amount})
     .then(_instance => {
@@ -138,15 +138,15 @@ contract('Remittance', accounts => {
     });
   });
 
-  it('should release funds to any account if both password hashes are provided', () => {
+  it('should release funds to recipient if both correct hashes are provided', () => {
     var initialBalance;
 
     return promisify((cb) => web3.eth.getBalance(bob, cb))
     .then(balance => {
       initialBalance = balance;
       return contractInstance.withdraw(
-        web3.sha3(password1),
-        web3.sha3(password2),
+        web3.sha3(password),
+        web3.sha3(recipientAddress),
         {from: bob});
     })
     .then(txObj => {
@@ -169,8 +169,24 @@ contract('Remittance', accounts => {
       return expectedExceptionPromise(() => {
         return contractInstance.withdraw(
           web3.sha3(wrongPassword1),
-          web3.sha3(password2),
+          web3.sha3(recipientAddress),
           {from: bob, gas: 1000000})
+        .then(txObj => txObj.tx);
+      }, 1000000);
+    })
+  });
+
+  it('should only release funds to recipient address', () => {
+    var initialBalance;
+    var notRecipient = alice;
+    return promisify((cb) => web3.eth.getBalance(bob, cb))
+    .then(balance => {
+      initialBalance = balance;
+      return expectedExceptionPromise(() => {
+        return contractInstance.withdraw(
+          web3.sha3(password),
+          web3.sha3(recipientAddress),
+          {from: notRecipient, gas: 1000000})
         .then(txObj => txObj.tx);
       }, 1000000);
     })
