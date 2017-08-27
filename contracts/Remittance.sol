@@ -5,6 +5,7 @@ import { OwnedDestroyable } from './OwnedDestroyable.sol';
 contract Remittance is OwnedDestroyable{
   bytes32 private passwordHash1;
   bytes32 private passwordHash2;
+  address public sender;
   uint public deadline;
   uint public maxDuration = 15;
 
@@ -18,16 +19,22 @@ contract Remittance is OwnedDestroyable{
     _;
   }
 
+  modifier onlySender {
+    require(msg.sender == sender);
+    _;
+  }
+
   event LogWithdrawal(address indexed _sender);
 
   function () payable {}
 
   function Remittance(
-    bytes32 _passwordHash1, bytes32 _passwordHash2, uint _duration)
+    address _sender, bytes32 _passwordHash1, bytes32 _passwordHash2, uint _duration)
     public
     payable {
     require(_duration <= maxDuration);
 
+    sender = _sender;
     passwordHash1 = sha3(_passwordHash1);
     passwordHash2 = sha3(_passwordHash2);
     deadline = block.number + _duration;
