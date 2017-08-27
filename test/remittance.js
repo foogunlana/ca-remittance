@@ -70,8 +70,9 @@ contract('Remittance', accounts => {
   const wrongPassword1 = password1 + "x";
   const password2 = "world";
   const amount = web3.toWei(5, 'ether');
-  var contractInstance;
   const duration = 10;
+  const deadlineTooLong = 100;
+  var contractInstance;
 
   beforeEach(() => {
     return Remittance.new(
