@@ -63,12 +63,14 @@ const promisify = function(inner) {
 }
 
 contract('Remittance', accounts => {
-  const alice = accounts[0];
-  const carol = accounts[1];
-  const bob = accounts[2];
+  const owner = accounts[0];
+  const alice = accounts[1];
+  const carol = accounts[2];
+  const bob = accounts[3];
+  const sender = alice;
+  const recipient = bob;
   const password = "hello";
-  const wrongPassword1 = password + "x";
-  const recipientAddress = bob;
+  const wrongPassword = password + "x";
   const amount = web3.toWei(5, 'ether');
   const duration = 10;
   const deadlineTooLong = 100;
@@ -76,12 +78,15 @@ contract('Remittance', accounts => {
 
   beforeEach(() => {
     return Remittance.new(
+      sender,
       web3.sha3(password, {encoding: 'hex'}),
-      web3.sha3(recipientAddress, {encoding: 'hex'}),
+      web3.sha3(recipient, {encoding: 'hex'}),
       0,
-      {from: alice, value: amount})
+      {from: owner})
     .then(instance => {
       contractInstance = instance;
+      return web3.eth.sendTransaction(
+        {from: alice, value: amount});
     });
   });
 
@@ -90,13 +95,13 @@ contract('Remittance', accounts => {
     .then(_owner => {
       assert.equal(
         _owner,
-        alice,
+        owner,
         'The contract owner was not set to the initial creator');
     });
   });
 
   it('should be destroyable immediately without deadline or (duration = 0)', () => {
-    return contractInstance.destroy()
+    return contractInstance.destroy({from: owner})
     .then(() => {
       assert.equal(
         web3.eth.getCode(contractInstance.address),
@@ -108,33 +113,33 @@ contract('Remittance', accounts => {
   it('should reject deadlines that are too long', () => {
     return expectedExceptionPromise(() => {
       return Remittance.new(
+        sender,
         web3.sha3(password, {encoding: 'hex'}),
-        web3.sha3(recipientAddress, {encoding: 'hex'}),
+        web3.sha3(recipient, {encoding: 'hex'}),
         deadlineTooLong,
-        {from: alice, value: amount, gas: 1000000})
+        {from: owner, gas: 1000000})
       .then(txObj => txObj.tx);
     }, 1000000);
   });
 
-  it('should be not be destroyable before deadline', () => {
+  it('should be not be refundable before deadline', () => {
     var instance;
     return Remittance.new(
+      sender,
       web3.sha3(password, {encoding: 'hex'}),
-      web3.sha3(recipientAddress, {encoding: 'hex'}),
+      web3.sha3(recipient, {encoding: 'hex'}),
       duration,
-      {from: alice, value: amount})
+      {from: owner})
     .then(_instance => {
       instance = _instance;
+      return web3.eth.sendTransaction(
+        {from: alice, value: amount});
+    })
+    .then(tx => {
       return expectedExceptionPromise(() => {
-        return instance.destroy({from: alice, gas: 1000000})
+        return instance.refund({from: alice, gas: 1000000})
         .then(txObj => txObj.tx);
       }, 1000000);
-    })
-    .then(() => {
-      assert.notEqual(
-        web3.eth.getCode(instance.address),
-        '0x0',
-        'The code was not destroyed');
     });
   });
 
@@ -146,7 +151,7 @@ contract('Remittance', accounts => {
       initialBalance = balance;
       return contractInstance.withdraw(
         web3.sha3(password, {encoding: 'hex'}),
-        web3.sha3(recipientAddress, {encoding: 'hex'}),
+        web3.sha3(recipient, {encoding: 'hex'}),
         {from: bob});
     })
     .then(txObj => {
@@ -168,8 +173,8 @@ contract('Remittance', accounts => {
       initialBalance = balance;
       return expectedExceptionPromise(() => {
         return contractInstance.withdraw(
-          web3.sha3(wrongPassword1, {encoding: 'hex'}),
-          web3.sha3(recipientAddress, {encoding: 'hex'}),
+          web3.sha3(wrongPassword, {encoding: 'hex'}),
+          web3.sha3(recipient, {encoding: 'hex'}),
           {from: bob, gas: 1000000})
         .then(txObj => txObj.tx);
       }, 1000000);
@@ -185,7 +190,7 @@ contract('Remittance', accounts => {
       return expectedExceptionPromise(() => {
         return contractInstance.withdraw(
           web3.sha3(password, {encoding: 'hex'}),
-          web3.sha3(recipientAddress, {encoding: 'hex'}),
+          web3.sha3(recipient, {encoding: 'hex'}),
           {from: notRecipient, gas: 1000000})
         .then(txObj => txObj.tx);
       }, 1000000);
