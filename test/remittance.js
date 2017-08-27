@@ -86,7 +86,7 @@ contract('Remittance', accounts => {
     .then(instance => {
       contractInstance = instance;
       return web3.eth.sendTransaction(
-        {from: alice, value: amount});
+        {from: alice, value: amount, to: Remittance.address});
     });
   });
 
@@ -100,9 +100,18 @@ contract('Remittance', accounts => {
     });
   });
 
-  it('should be destroyable immediately without deadline or (duration = 0)', () => {
-    return contractInstance.destroy({from: owner})
-    .then(() => {
+  it('should be destroyable immediately without funds', () => {
+    return Remittance.new(
+      sender,
+      web3.sha3(password, {encoding: 'hex'}),
+      web3.sha3(recipient, {encoding: 'hex'}),
+      0,
+      {from: owner})
+    .then(instance => {
+      contractInstance = instance;
+      return contractInstance.destroy({from: owner});
+    })
+    .then(txObj => {
       assert.equal(
         web3.eth.getCode(contractInstance.address),
         '0x0',
@@ -133,7 +142,7 @@ contract('Remittance', accounts => {
     .then(_instance => {
       instance = _instance;
       return web3.eth.sendTransaction(
-        {from: alice, value: amount});
+        {from: alice, value: amount, to: Remittance.address});
     })
     .then(tx => {
       return expectedExceptionPromise(() => {
