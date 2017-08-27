@@ -14,7 +14,7 @@ contract Remittance is OwnedDestroyable{
   }
 
   modifier onlyRecipient {
-    require(web3.sha3(msg.sender) == passwordHash2);
+    require(sha3(sha3(msg.sender)) == passwordHash2);
     _;
   }
 
