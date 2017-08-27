@@ -1,6 +1,8 @@
 pragma solidity ^0.4.11;
 
-contract Remittance{
+import { OwnedDestroyable } from './OwnedDestroyable.sol';
+
+contract Remittance is OwnedDestroyable{
   bytes32 private passwordHash1;
   bytes32 private passwordHash2;
 

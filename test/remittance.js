@@ -87,7 +87,7 @@ contract('Remittance', accounts => {
     .then(_owner => {
       assert.equal(
         _owner,
-        owner,
+        alice,
         'The contract owner was not set to the initial creator');
     });
   });
