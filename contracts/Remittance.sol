@@ -13,6 +13,11 @@ contract Remittance is OwnedDestroyable{
     _;
   }
 
+  modifier onlyRecipient {
+    require(web3.sha3(msg.sender) == passwordHash2);
+    _;
+  }
+
   event LogWithdrawal(address indexed _sender);
 
   function () payable {}
@@ -30,6 +35,7 @@ contract Remittance is OwnedDestroyable{
 
   function withdraw(bytes32 _passwordHash1, bytes32 _passwordHash2)
     public
+    onlyRecipient
     returns(bool) {
     require(sha3(_passwordHash1) == passwordHash1);
     require(sha3(_passwordHash2) == passwordHash2);
