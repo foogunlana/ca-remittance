@@ -105,6 +105,17 @@ contract('Remittance', accounts => {
     });
   });
 
+  it('should reject deadlines that are too long', () => {
+    return expectedExceptionPromise(() => {
+      return Remittance.new(
+        web3.sha3(password1),
+        web3.sha3(password2),
+        deadlineTooLong,
+        {from: alice, value: amount, gas: 1000000})
+      .then(txObj => txObj.tx);
+    }, 1000000);
+  });
+
   it('should be not be destroyable before deadline', () => {
     var instance;
     return Remittance.new(
