@@ -95,10 +95,7 @@ contract('Remittance', accounts => {
 
   it('should be destroyable immediately without deadline or (deadline = 0)', () => {
     return contractInstance.destroy()
-    .then(txObj => {
-      return contractInstance.owner();
-    })
-    .then(_owner => {
+    .then(() => {
       assert.equal(
         web3.eth.getCode(contractInstance.address),
         '0x0',
