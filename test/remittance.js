@@ -82,6 +82,29 @@ contract('Remittance', accounts => {
     });
   });
 
+  it('should be owned', () => {
+    return contractInstance.owner()
+    .then(_owner => {
+      assert.equal(
+        _owner,
+        owner,
+        'The contract owner was not set to the initial creator');
+    });
+  });
+
+  it('should be destroyable', () => {
+    return contractInstance.destroy()
+    .then(txObj => {
+      return contractInstance.owner();
+    })
+    .then(_owner => {
+      assert.equal(
+        web3.eth.getCode(contractInstance.address),
+        '0x0',
+        'The code is not equal to 0x0 (empty code)');
+    });
+  });
+
   it('should release funds to any account if both password hashes are provided', () => {
     var initialBalance;
 
