@@ -126,7 +126,7 @@ contract('Remittance', accounts => {
     .then(_instance => {
       instance = _instance;
       return expectedExceptionPromise(() => {
-        return instance.destroy({from: alice})
+        return instance.destroy({from: alice, gas: 1000000})
         .then(txObj => txObj.tx);
       }, 1000000);
     })
