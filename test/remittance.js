@@ -17,7 +17,7 @@ function getTransactionReceiptMined(txHash, interval) {
 
   if (Array.isArray(txHash)) {
     return Promise.all(txHash.map(
-      oneTxHash => web3.eth.getTransactionReceiptMined(oneTxHash, interval)));
+      oneTxHash => getTransactionReceiptMined(oneTxHash, interval)));
   } else if (typeof txHash === "string") {
     return new Promise(transactionReceiptAsync);
   } else {
@@ -204,5 +204,34 @@ contract('Remittance', accounts => {
         .then(txObj => txObj.tx);
       }, 1000000);
     })
+  });
+
+  it('it should give some commission to the owner upon withdrawal', () => {
+    var initialBalance;
+    return Remittance.new(
+      sender,
+      web3.sha3(password, {encoding: 'hex'}),
+      web3.sha3(recipient, {encoding: 'hex'}),
+      0,
+      {from: owner})
+    .then(instance => {
+      contractInstance = instance;
+      return web3.eth.getBalance(owner);
+    })
+    .then(_balance => {
+      initialBalance = _balance;
+      var txn = web3.eth.sendTransaction(
+        {from: alice, value: amount, to: contractInstance.address});
+      return getTransactionReceiptMined(txn);
+    })
+    .then(receipt => {
+      return web3.eth.getBalance(owner);
+    })
+    .then(balance => {
+      assert.isAbove(
+        balance.toNumber(),
+        initialBalance.toNumber(),
+        "Owner's balance wasn't credited!")
+    });
   });
 });
