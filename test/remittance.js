@@ -77,6 +77,7 @@ contract('Remittance', accounts => {
     return Remittance.new(
       web3.sha3(password1),
       web3.sha3(password2),
+      0,
       {from: alice, value: amount})
     .then(instance => {
       contractInstance = instance;
