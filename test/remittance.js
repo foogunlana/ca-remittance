@@ -86,7 +86,7 @@ contract('Remittance', accounts => {
     .then(instance => {
       contractInstance = instance;
       return web3.eth.sendTransaction(
-        {from: alice, value: amount, to: Remittance.address});
+        {from: alice, value: amount, to: contractInstance.address});
     });
   });
 
