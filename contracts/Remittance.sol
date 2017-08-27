@@ -6,6 +6,7 @@ contract Remittance is OwnedDestroyable{
   bytes32 private passwordHash1;
   bytes32 private passwordHash2;
   uint public deadline;
+  uint public maxDuration = 15;
 
   modifier deadlinePassed {
     assert(block.number >= deadline);
@@ -20,6 +21,8 @@ contract Remittance is OwnedDestroyable{
     bytes32 _passwordHash1, bytes32 _passwordHash2, uint _duration)
     public
     payable {
+    require(_duration <= maxDuration);
+
     passwordHash1 = sha3(_passwordHash1);
     passwordHash2 = sha3(_passwordHash2);
     deadline = block.number + _duration;
