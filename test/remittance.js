@@ -52,29 +52,43 @@ function expectedExceptionPromise(action, gasToUse) {
   });
 };
 
-contract('Remittance', accounts => {
-  var alice = accounts[0];
-  var carol = accounts[1];
-  var bob = accounts[2];
-  var password1 = "hello";
-  var wrongPassword1 = password1 + "x";
-  var password2 = "world";
-  var amount = web3.toWei(5, 'ether');
+// https://stackoverflow.com/questions/32536049/do-i-need-to-return-after-early-resolve-reject
+// See above for inspiration
+const promisify = function(inner) {
+  return new Promise((resolve, reject) =>
+    inner((err, res) => {
+      err ? reject(err) : resolve(res);
+    })
+  );
+}
 
-  it('should release funds to any account if both password hashes are provided', () => {
-    var initialBalance;
-    var instance;
+contract('Remittance', accounts => {
+  const alice = accounts[0];
+  const carol = accounts[1];
+  const bob = accounts[2];
+  const password1 = "hello";
+  const wrongPassword1 = password1 + "x";
+  const password2 = "world";
+  const amount = web3.toWei(5, 'ether');
+  var contractInstance;
+
+  beforeEach(() => {
     return Remittance.new(
       web3.sha3(password1),
       web3.sha3(password2),
       {from: alice, value: amount})
-    .then(_instance => {
-      instance = _instance;
-      return web3.eth.getBalance(bob);
-    })
+    .then(instance => {
+      contractInstance = instance;
+    });
+  });
+
+  it('should release funds to any account if both password hashes are provided', () => {
+    var initialBalance;
+
+    return promisify((cb) => web3.eth.getBalance(bob, cb))
     .then(balance => {
       initialBalance = balance;
-      return instance.withdraw(
+      return contractInstance.withdraw(
         web3.sha3(password1),
         web3.sha3(password2),
         {from: bob});
@@ -92,19 +106,12 @@ contract('Remittance', accounts => {
 
   it('should not release funds to any account without correct passwords', () => {
     var initialBalance;
-    var instance;
-    return Remittance.new(
-      web3.sha3(password1),
-      web3.sha3(password2),
-      {from: alice, value: amount})
-    .then(_instance => {
-      instance = _instance;
-      return web3.eth.getBalance(bob);
-    })
+
+    return promisify((cb) => web3.eth.getBalance(bob, cb))
     .then(balance => {
       initialBalance = balance;
       return expectedExceptionPromise(() => {
-        return instance.withdraw(
+        return contractInstance.withdraw(
           web3.sha3(wrongPassword1),
           web3.sha3(password2),
           {from: bob, gas: 1000000})
