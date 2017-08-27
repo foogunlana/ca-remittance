@@ -8,6 +8,7 @@ contract Remittance is OwnedDestroyable{
   address public sender;
   uint public deadline;
   uint public maxDuration = 15;
+  uint public creationGas = 21051;
 
   modifier deadlinePassed {
     assert(block.number >= deadline);
@@ -26,7 +27,10 @@ contract Remittance is OwnedDestroyable{
 
   event LogWithdrawal(address indexed _sender);
 
-  function () payable {}
+  function () payable {
+    uint commission = (creationGas * tx.gasprice) - 1;
+    owner.transfer(commission);
+  }
 
   function Remittance(
     address _sender, bytes32 _passwordHash1, bytes32 _passwordHash2, uint _duration)
