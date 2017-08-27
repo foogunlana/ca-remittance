@@ -51,9 +51,20 @@ contract Remittance is OwnedDestroyable{
     return true;
   }
 
-  function destroy()
+  function refund()
     public
-    deadlinePassed {
+    payable
+    onlySender
+    deadlinePassed
+    returns(bool) {
+
+    sender.transfer(this.balance);
+    return true;
+  }
+
+  function destroy()
+    public {
+    require((block.number >= deadline + 100) || (this.balance == 0));
     super.destroy();
   }
 }
