@@ -22,7 +22,7 @@ contract Remittance is OwnedDestroyable{
     payable {
     passwordHash1 = sha3(_passwordHash1);
     passwordHash2 = sha3(_passwordHash2);
-    deadline = block.number + duration;
+    deadline = block.number + _duration;
   }
 
   function withdraw(bytes32 _passwordHash1, bytes32 _passwordHash2)
