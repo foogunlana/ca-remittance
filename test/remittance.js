@@ -71,7 +71,7 @@ contract('Remittance', accounts => {
   const password2 = "world";
   const amount = web3.toWei(5, 'ether');
   var contractInstance;
-  const deadline = 10;
+  const duration = 10;
 
   beforeEach(() => {
     return Remittance.new(
@@ -93,7 +93,7 @@ contract('Remittance', accounts => {
     });
   });
 
-  it('should be destroyable immediately without deadline or (deadline = 0)', () => {
+  it('should be destroyable immediately without deadline or (duration = 0)', () => {
     return contractInstance.destroy()
     .then(() => {
       assert.equal(
@@ -108,7 +108,7 @@ contract('Remittance', accounts => {
     return Remittance.new(
       web3.sha3(password1),
       web3.sha3(password2),
-      deadline,
+      duration,
       {from: alice, value: amount})
     .then(_instance => {
       instance = _instance;
