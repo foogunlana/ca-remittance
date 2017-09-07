@@ -7,6 +7,7 @@ contract Remittance is OwnedDestroyable{
   address public sender;
   uint public deadline;
   uint public commission;
+  uint public amount;
   uint public maxDuration = 15;
   uint public creationGas = 21051;
 
