@@ -3,20 +3,15 @@ pragma solidity ^0.4.11;
 import { OwnedDestroyable } from './OwnedDestroyable.sol';
 
 contract Remittance is OwnedDestroyable{
-  bytes32 private passwordHash1;
-  bytes32 private passwordHash2;
+  bytes32 private passwordHash;
   address public sender;
   uint public deadline;
+  uint public commission;
   uint public maxDuration = 15;
   uint public creationGas = 21051;
 
   modifier deadlinePassed {
     assert(block.number >= deadline);
-    _;
-  }
-
-  modifier onlyRecipient {
-    require(sha3(sha3(msg.sender)) == passwordHash2);
     _;
   }
 
@@ -26,49 +21,63 @@ contract Remittance is OwnedDestroyable{
   }
 
   event LogWithdrawal(address indexed _sender);
+  event LogWithdrawCommission(address indexed _owner);
 
   function () payable {
-    uint commission = (creationGas * tx.gasprice) - 1;
-    owner.transfer(commission);
+    commission = (creationGas * tx.gasprice) - 1;
+    require(msg.value > commission);
+    amount = msg.value - commission;
   }
 
   function Remittance(
-    address _sender, bytes32 _passwordHash1, bytes32 _passwordHash2, uint _duration)
+    address _sender, bytes32 _passwordHash, uint _duration)
     public
-    payable {
+  {
     require(_duration <= maxDuration);
-
     sender = _sender;
-    passwordHash1 = sha3(_passwordHash1);
-    passwordHash2 = sha3(_passwordHash2);
+    passwordHash = _passwordHash;
     deadline = block.number + _duration;
   }
 
-  function withdraw(bytes32 _passwordHash1, bytes32 _passwordHash2)
+  function withdraw(bytes32 _password1, bytes32 _password2)
     public
-    onlyRecipient
-    returns(bool) {
-    require(sha3(_passwordHash1) == passwordHash1);
-    require(sha3(_passwordHash2) == passwordHash2);
-    msg.sender.transfer(this.balance);
+    returns(bool)
+  {
+    require(sha3(_password1, _password2) == passwordHash);
+    require(sha3(msg.sender) == _password2);
+    amount = 0;
+    msg.sender.transfer(amount);
     LogWithdrawal(msg.sender);
+    return true;
+  }
+
+  function withdrawCommission()
+    public
+    onlyOwner
+    returns(bool)
+  {
+    require(commission > 0);
+    commission = 0;
+    owner.transfer(commission);
+    LogWithdrawCommission(msg.sender);
     return true;
   }
 
   function refund()
     public
-    payable
     onlySender
     deadlinePassed
-    returns(bool) {
-
-    sender.transfer(this.balance);
+    returns(bool)
+  {
+    amount = 0;
+    sender.transfer(amount);
     return true;
   }
 
   function destroy()
-    public {
-    require((block.number >= deadline + 100) || (this.balance == 0));
+    public
+  {
+    require((block.number >= deadline + 100) || (amount == 0));
     super.destroy();
   }
 }
