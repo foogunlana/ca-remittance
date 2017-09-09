@@ -3,7 +3,7 @@ pragma solidity ^0.4.11;
 import { OwnedDestroyable } from './OwnedDestroyable.sol';
 
 contract Remittance is OwnedDestroyable{
-  bytes32 private passwordHash;
+  bytes32 public passwordHash;
   address public sender;
   uint public deadline;
   uint public commission;
@@ -25,29 +25,28 @@ contract Remittance is OwnedDestroyable{
   event LogWithdrawCommission(address indexed _owner);
 
   function () payable {
-    commission = (creationGas * tx.gasprice) - 1;
-    require(msg.value > commission);
+    uint commissionAmount = (creationGas * tx.gasprice) - 1;
+    require(msg.value > commissionAmount);
+    commission = commissionAmount;
     amount = msg.value - commission;
   }
 
-  function Remittance(
-    address _sender, bytes32 _passwordHash, uint _duration)
-    public
-  {
+  function Remittance(address _sender, bytes32 _passwordHash, uint _duration) {
     require(_duration <= maxDuration);
     sender = _sender;
     passwordHash = _passwordHash;
     deadline = block.number + _duration;
   }
 
-  function withdraw(bytes32 _password1, bytes32 _password2)
+  function withdraw(string _password1, bytes32 _password2)
     public
     returns(bool)
   {
     require(sha3(_password1, _password2) == passwordHash);
     require(sha3(msg.sender) == _password2);
+    uint transferAmount = amount;
     amount = 0;
-    msg.sender.transfer(amount);
+    msg.sender.transfer(transferAmount);
     LogWithdrawal(msg.sender);
     return true;
   }
@@ -58,8 +57,9 @@ contract Remittance is OwnedDestroyable{
     returns(bool)
   {
     require(commission > 0);
+    uint commissionAmount = commission;
     commission = 0;
-    owner.transfer(commission);
+    owner.transfer(commissionAmount);
     LogWithdrawCommission(msg.sender);
     return true;
   }
@@ -70,8 +70,9 @@ contract Remittance is OwnedDestroyable{
     deadlinePassed
     returns(bool)
   {
+    uint transferAmount = amount;
     amount = 0;
-    sender.transfer(amount);
+    sender.transfer(transferAmount);
     return true;
   }
 
