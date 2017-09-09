@@ -3,7 +3,7 @@ pragma solidity ^0.4.11;
 import { OwnedDestroyable } from './OwnedDestroyable.sol';
 
 contract Remittance is OwnedDestroyable{
-  bytes32 public passwordHash;
+  bytes32 private passwordHash;
   address public sender;
   uint public deadline;
   uint public commission;
